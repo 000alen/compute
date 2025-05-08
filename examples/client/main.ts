@@ -14,14 +14,21 @@ async function main() {
     labels: { "created-by": "runs.ts example" },
   });
 
-  await run.execWait({
+  const installExitCode = await run.execWait({
     cmd: "npm",
     args: ["install"]
   });
 
-  await run.exec({
+  console.log("Install exit code", installExitCode);
+
+  const devExec = await run.exec({
     cmd: "npm",
     args: ["run", "dev"]
+  });
+
+  await devExec.start({
+    hijack: false,
+    stdin: true,
   });
 
   console.log("App available at", await run.publicUrl(3000));
