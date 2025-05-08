@@ -1,10 +1,14 @@
-import { createTRPCClient as _createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient as _createTRPCClient, httpSubscriptionLink, httpBatchLink, splitLink } from '@trpc/client';
 import type { ComputeRouter } from './server.js';
 
 export function createTRPCClient(url: string) {
   const trpc = _createTRPCClient<ComputeRouter>({
     links: [
-      httpBatchLink({ url: url }),
+      splitLink({
+        condition: (op) => op.type === "subscription",
+        true: httpSubscriptionLink({ url: url }),
+        false: httpBatchLink({ url: url }),
+      }),
     ],
   });
 
