@@ -13,13 +13,29 @@ async function main() {
     ports: [3000],
     labels: { "created-by": "runs.ts example" },
   });
+  console.log("Run created", run.id);
 
-  console.log("Run created");
+  const { exec: installExec, stream: installStream } = await run.exec({
+    cmd: "npm",
+    args: ["install"]
+  });
+  console.log("Install exec started", installExec.id);
+  for await (const chunk of installStream) {
+    console.log(chunk);
+  }
 
-  const { data } = await run.exec({ cmd: "npm", args: ["install"] });
-  console.log("Install done\n", data);
+  const { exec: devExec, stream: devStream } = await run.exec({
+    cmd: "npm",
+    args: ["run", "dev"]
+  });
+  console.log("Dev exec started", devExec.id);
 
-  run.exec({ cmd: "npm", args: ["run", "dev"] });
+  (async () => {
+    for await (const chunk of devStream) {
+      console.log(chunk);
+    }
+  })()
+
   console.log("App available at", await run.publicUrl(3000));
 
   await sleep(30_000)

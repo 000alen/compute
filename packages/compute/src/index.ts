@@ -14,7 +14,7 @@
 
 import { CreateRunOptions as _CreateRunOptions } from "@000alen/compute-types";
 import { createTRPCClient } from "./trpc/client.js";
-import { ClientRun } from "./runs.client.js";
+import { ClientRun } from "./client-run.js";
 
 type CreateRunOptions = _CreateRunOptions & {
   apiUrl: string;

@@ -3,7 +3,7 @@ import { mkdtemp } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { procedure, router } from './trpc.js';
-import { Run } from "../runs.server.js";
+import { Run } from "../lib/run.js";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { TRPCError } from '@trpc/server';
@@ -81,27 +81,6 @@ export function createRunRouter(options: CreateRunRouterOptions) {
           return await exec.inspect();
         }),
     }),
-
-    execWait: procedure
-      .input(ExecOptions.extend({ id: z.string() }))
-      .mutation(async ({ input }) => {
-        const { id, ...opts } = input;
-
-        if (!options.runs.has(id))
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Run ${id} not found`
-          });
-
-        const run = options.runs.get(id);
-        if (!run)
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Run ${id} not found`
-          });
-
-        return await run.execWait(opts);
-      }),
 
     exec: procedure
       .input(ExecOptions.extend({ id: z.string() }))

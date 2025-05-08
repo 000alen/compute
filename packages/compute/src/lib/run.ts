@@ -15,16 +15,6 @@ export class Run {
   }
 
   /**
-   * Executes a command and *waits* for completion, resolving with exit code.
-   */
-  async execWait(opts: ExecOptions): Promise<number> {
-    const exec = await this.createExec(opts);
-    await exec.start({ hijack: true, stdin: false });
-    const { ExitCode } = await exec.inspect();
-    return ExitCode ?? -1;
-  }
-
-  /**
    * Starts a command *without* waiting. Returns ExecInstance handle.
    */
   async exec(opts: ExecOptions): Promise<{ exec: ExecInstance, duplex: stream.Duplex }> {
