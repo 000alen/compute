@@ -1,4 +1,5 @@
 import { z } from "zod";
+import * as stream from "stream";
 
 export const GitSource = z.object({
   type: z.literal("git"),
@@ -53,9 +54,29 @@ export interface ContainerInstance {
   inspect(): Promise<{ NetworkSettings: { Ports: Record<string, Array<{ HostPort: string }> | undefined> } }>;
 }
 
+export interface DockerExecInspectInfo {
+  CanRemove: boolean;
+  DetachKeys: string;
+  ID: string;
+  Running: boolean;
+  ExitCode: number | null;
+  ProcessConfig: {
+    privileged: boolean;
+    user: string;
+    tty: boolean;
+    entrypoint: string;
+    arguments: string[];
+  };
+  OpenStdin: boolean;
+  OpenStderr: boolean;
+  OpenStdout: boolean;
+  ContainerID: string;
+  Pid: number;
+}
+
 export interface ExecInstance {
-  start(options: { hijack: boolean; stdin: boolean }): Promise<void>;
-  inspect(): Promise<{ ExitCode: number | null }>;
+  start(options: { hijack: boolean; stdin: boolean }): Promise<stream.Duplex>;
+  inspect(): Promise<DockerExecInspectInfo>;
 }
 
 // Source materialization interfaces

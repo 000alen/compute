@@ -1,6 +1,7 @@
 import Docker from "dockerode";
-import { ContainerAdapter, ContainerInstance, ExecInstance } from "@000alen/compute-types";
+import { ContainerAdapter, ContainerInstance, ExecInstance, DockerExecInspectInfo } from "@000alen/compute-types";
 import { SimpleGit, simpleGit } from "simple-git";
+import * as stream from "stream";
 
 export class DockerAdapter implements ContainerAdapter {
   private docker: Docker;
@@ -122,11 +123,13 @@ export class DockerExecInstance implements ExecInstance {
     this.exec = exec;
   }
 
-  async start(options: { hijack: boolean; stdin: boolean }): Promise<void> {
-    await this.exec.start(options);
+  async start(options: { hijack: boolean; stdin: boolean }): Promise<stream.Duplex> {
+    const duplex = await this.exec.start(options)
+
+    return duplex;
   }
 
-  inspect(): Promise<{ ExitCode: number | null }> {
+  inspect(): Promise<DockerExecInspectInfo> {
     return this.exec.inspect();
   }
 } 

@@ -14,30 +14,19 @@ async function main() {
     labels: { "created-by": "runs.ts example" },
   });
 
-  const installExitCode = await run.execWait({
-    cmd: "npm",
-    args: ["install"]
-  });
+  console.log("Run created");
 
-  console.log("Install exit code", installExitCode);
+  const { data } = await run.exec({ cmd: "npm", args: ["install"] });
+  console.log("Install done\n", data);
 
-  const devExec = await run.exec({
-    cmd: "npm",
-    args: ["run", "dev"]
-  });
-
-  await devExec.start({
-    hijack: false,
-    stdin: true,
-  });
-
+  run.exec({ cmd: "npm", args: ["run", "dev"] });
   console.log("App available at", await run.publicUrl(3000));
 
-  await sleep(60_000)
+  await sleep(30_000)
     .then(async () => {
       await run.dispose();
     })
-    .finally(() => {
+    .finally(async () => {
       process.exit(0);
     });
 }

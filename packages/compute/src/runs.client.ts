@@ -1,8 +1,8 @@
-import { ExecOptions, ExecInstance } from "@000alen/compute-types";
+import { ExecOptions, DockerExecInspectInfo } from "@000alen/compute-types";
 import { TRPCClient } from "@trpc/client";
 import type { ComputeRouter } from "./trpc/server.js";
 
-export class ClientExecInstance implements ExecInstance {
+export class ClientExecInstance {
   private readonly trpc: TRPCClient<ComputeRouter>;
   public readonly id: string;
 
@@ -14,11 +14,34 @@ export class ClientExecInstance implements ExecInstance {
     this.id = id;
   }
 
-  async start(opts: { hijack: boolean, stdin: boolean }): Promise<void> {
-    return await this.trpc.run.execs.start.mutate({ id: this.id, ...opts });
+  async start(opts: { hijack: boolean, stdin: boolean }): Promise<{ data: string }> {
+    const self = this;
+
+    let data: string = "";
+    const promise = new Promise<{ data: string }>((resolve, reject) => {
+      this.trpc.run.execs.start.subscribe(
+        { id: this.id, ...opts },
+        {
+          onData({ type, chunk }) {
+            if (type === "data") {
+              data += chunk;
+            }
+          },
+          onError(error) {
+            reject(error);
+          },
+          onStopped() {
+            resolve({ data });
+          }
+        }
+      );
+
+    });
+
+    return await promise;
   }
 
-  async inspect(): Promise<{ ExitCode: number | null }> {
+  async inspect(): Promise<DockerExecInspectInfo> {
     return await this.trpc.run.execs.inspect.mutate({ id: this.id });
   }
 }
@@ -45,9 +68,41 @@ export class ClientRun {
   /**
    * Starts a command *without* waiting. Returns ExecInstance handle.
    */
-  async exec(opts: ExecOptions): Promise<ExecInstance> {
-    const id = await this.trpc.run.exec.mutate({ ...opts, id: this.id });
-    return new ClientExecInstance(this.trpc, id);
+  async exec(opts: ExecOptions): Promise<{ id: string, exec: ClientExecInstance, data: string }> {
+    const self = this;
+
+    let execId: string | null = null;
+    let data: string = "";
+
+    const promise = new Promise<{ id: string, exec: ClientExecInstance, data: string }>((resolve, reject) => {
+      this.trpc.run.exec.subscribe(
+        { ...opts, id: this.id },
+        {
+          onData({ type, chunk }) {
+            if (type === "start") {
+              execId = chunk;
+            } else if (type === "data") {
+              data += chunk;
+            }
+          },
+          onError(error) {
+            reject(error);
+          },
+          onStopped() {
+            if (!execId) return reject(new Error("Exec ID not found"));
+
+            resolve({
+              id: execId,
+              exec: new ClientExecInstance(self.trpc, execId),
+              data
+            });
+          },
+        }
+      );
+
+    });
+
+    return await promise;
   }
 
   /**

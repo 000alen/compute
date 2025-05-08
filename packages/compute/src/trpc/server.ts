@@ -7,6 +7,9 @@ import { Run } from "../runs.server.js";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { TRPCError } from '@trpc/server';
+import { EventSource } from "eventsource";
+
+globalThis.EventSource = EventSource;
 
 interface CreateComputeRouterOptions {
   containerAdapter: ContainerAdapter;
@@ -16,9 +19,10 @@ interface CreateRunRouterOptions {
   runs: Map<string, Run>;
 }
 
-export function createRunRouter(options: CreateRunRouterOptions) {
-  const execs = new Map<string, ExecInstance>();
+const runs = new Map<string, Run>();
+const execs = new Map<string, ExecInstance>();
 
+export function createRunRouter(options: CreateRunRouterOptions) {
   const runRouter = router({
     execs: router({
       start: procedure
@@ -29,7 +33,7 @@ export function createRunRouter(options: CreateRunRouterOptions) {
             stdin: z.boolean(),
           })
         )
-        .mutation(async ({ input }) => {
+        .subscription(async function* ({ input }) {
           const { id, ...opts } = input;
 
           if (!execs.has(id))
@@ -45,7 +49,15 @@ export function createRunRouter(options: CreateRunRouterOptions) {
               message: `Exec ${id} not found`
             });
 
-          await exec.start(opts);
+          const duplex = await exec.start(opts);
+
+          for await (const part of duplex) {
+            const buffer = part as Buffer;
+            const value = buffer.toString("utf-8");
+            yield { type: "data", chunk: value };
+          }
+
+          return;
         }),
 
       inspect: procedure
@@ -66,7 +78,7 @@ export function createRunRouter(options: CreateRunRouterOptions) {
               message: `Exec ${id} not found`
             });
 
-          await exec.inspect();
+          return await exec.inspect();
         }),
     }),
 
@@ -93,7 +105,7 @@ export function createRunRouter(options: CreateRunRouterOptions) {
 
     exec: procedure
       .input(ExecOptions.extend({ id: z.string() }))
-      .mutation(async ({ input }) => {
+      .subscription(async function* ({ input }) {
         const { id, ...opts } = input;
 
         if (!options.runs.has(id))
@@ -110,10 +122,17 @@ export function createRunRouter(options: CreateRunRouterOptions) {
           });
 
         const execId = uuidv4();
-        const exec = await run.exec(opts);
+        const { exec, duplex } = await run.exec(opts);
         execs.set(execId, exec);
 
-        return id;
+        yield { type: "start", chunk: execId }
+
+        for await (const part of duplex) {
+          const value = part.toString("utf-8");
+          yield { type: "data", chunk: value };
+        }
+
+        return;
       }),
 
     publicUrl: procedure
@@ -165,8 +184,6 @@ export function createRunRouter(options: CreateRunRouterOptions) {
 
 export function createComputeRouter(options: CreateComputeRouterOptions) {
   const { containerAdapter } = options;
-
-  const runs = new Map<string, Run>();
 
   const runRouter = createRunRouter({ runs });
 
@@ -220,7 +237,7 @@ export function createComputeRouter(options: CreateComputeRouterOptions) {
         }
 
         const id = uuidv4();
-        const run = new Run(containerAdapter, container, tmpDir, portMap);
+        const run = new Run(container, tmpDir, portMap);
         runs.set(id, run);
 
         return {

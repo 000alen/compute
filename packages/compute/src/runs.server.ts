@@ -1,15 +1,14 @@
 import { ExecOptions, ContainerAdapter, ContainerInstance, ExecInstance } from "@000alen/compute-types";
 import { rm } from "fs/promises";
+import * as stream from "stream";
 
 export class Run {
-  private readonly containerAdapter: ContainerAdapter;
   private readonly container: ContainerInstance;
   private readonly tmpDir: string;
   private readonly portMap: Record<number, number>; // container → host
   private cleaned = false;
 
-  constructor(containerAdapter: ContainerAdapter, container: ContainerInstance, tmpDir: string, portMap: Record<number, number>) {
-    this.containerAdapter = containerAdapter;
+  constructor(container: ContainerInstance, tmpDir: string, portMap: Record<number, number>) {
     this.container = container;
     this.tmpDir = tmpDir;
     this.portMap = portMap;
@@ -28,10 +27,10 @@ export class Run {
   /**
    * Starts a command *without* waiting. Returns ExecInstance handle.
    */
-  async exec(opts: ExecOptions): Promise<ExecInstance> {
+  async exec(opts: ExecOptions): Promise<{ exec: ExecInstance, duplex: stream.Duplex }> {
     const exec = await this.createExec(opts);
-    await exec.start({ hijack: true, stdin: false });
-    return exec;
+    const duplex = await exec.start({ hijack: true, stdin: false });
+    return { exec, duplex };
   }
 
   /**
