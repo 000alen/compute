@@ -1,6 +1,6 @@
 import { ExecOptions, DockerExecInspectInfo } from "@000alen/compute-types";
 import { TRPCClient } from "@trpc/client";
-import type { ComputeRouter } from "./trpc/server.js";
+import type { ComputeRouter } from "../trpc/server.js";
 
 export class ClientExecInstance {
   private readonly trpc: TRPCClient<ComputeRouter>;
@@ -88,5 +88,29 @@ export class ClientRun {
    */
   async dispose(): Promise<void> {
     return await this.trpc.run.dispose.mutate({ id: this.id });
+  }
+
+  async download(path: string): Promise<ReadableStream> {
+    const self = this;
+    return new ReadableStream({
+      start(controller) {
+        self.trpc.download.subscribe(
+          { path, id: self.id },
+          {
+            onData(chunk) {
+              if (typeof chunk === "string") {
+                const dataArray = new TextEncoder().encode(chunk);
+                controller.enqueue(Buffer.from(dataArray));
+              } else {
+                controller.enqueue(Buffer.from(chunk.data));
+              }
+            },
+            onStopped() {
+              controller.close();
+            },
+          }
+        );
+      }
+    })
   }
 }

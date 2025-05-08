@@ -3,7 +3,8 @@ import { rm } from "fs/promises";
 import * as stream from "stream";
 
 export class Run {
-  private readonly container: ContainerInstance;
+  public readonly container: ContainerInstance;
+
   private readonly tmpDir: string;
   private readonly portMap: Record<number, number>; // container → host
   private cleaned = false;

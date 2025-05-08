@@ -2,6 +2,9 @@ import Docker from "dockerode";
 import { ContainerAdapter, ContainerInstance, ExecInstance, DockerExecInspectInfo } from "@000alen/compute-types";
 import { SimpleGit, simpleGit } from "simple-git";
 import * as stream from "stream";
+import * as fs from "fs";
+import { pipeline } from "stream/promises";
+import * as tar from "tar";
 
 export class DockerAdapter implements ContainerAdapter {
   private docker: Docker;
@@ -113,6 +116,26 @@ export class DockerContainerInstance implements ContainerInstance {
 
   inspect(): Promise<{ NetworkSettings: { Ports: Record<string, Array<{ HostPort: string }> | undefined> } }> {
     return this.container.inspect();
+  }
+
+  async download(srcPath: string): Promise<NodeJS.ReadableStream> {
+    // Docker will stream back a .tar containing srcPath.
+    return this.container.getArchive({ path: srcPath });
+  }
+
+  async copyToHost(srcPath: string, destPath: string): Promise<void> {
+    // Ensure destination directory exists.
+    await fs.promises.mkdir(destPath, { recursive: true });
+
+    const tarStream = await this.download(srcPath);
+
+    // Extract the tar stream into destPath.  `tar.x` handles
+    // path sanitisation, so traversal attacks are avoided.
+    // `cwd` is where the archive will be exploded.
+    await pipeline(
+      tarStream,
+      tar.x({ cwd: destPath, strip: 0 })  // keep original layout
+    );
   }
 }
 

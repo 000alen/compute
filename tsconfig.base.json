@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": ["node"],
     "disableSizeLimit": true,
     "declaration": true,
     "target": "ESNext",
@@ -13,7 +15,6 @@
     "allowJs": true,
     "downlevelIteration": true,
     "inlineSourceMap": true,
-    "experimentalDecorators": true,
-    "jsx": "react-jsx"
+    "experimentalDecorators": true
   }
 }

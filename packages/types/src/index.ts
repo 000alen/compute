@@ -52,6 +52,18 @@ export interface ContainerInstance {
   stop(options?: { t: number }): Promise<void>;
   remove(options?: { force: boolean }): Promise<void>;
   inspect(): Promise<{ NetworkSettings: { Ports: Record<string, Array<{ HostPort: string }> | undefined> } }>;
+
+  /**
+   * Return a tar stream that contains the file or directory located at
+   * `srcPath` inside the running (or stopped) container.
+   */
+  download(srcPath: string): Promise<NodeJS.ReadableStream>;
+
+  /**
+   * Copy a file or directory out of the container into `destPath` on the host.
+   * If `destPath` already exists it will be overwritten.
+   */
+  copyToHost(srcPath: string, destPath: string): Promise<void>;
 }
 
 export interface DockerExecInspectInfo {

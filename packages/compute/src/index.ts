@@ -13,15 +13,15 @@
  */
 
 import { CreateRunOptions as _CreateRunOptions } from "@000alen/compute-types";
-import { createTRPCClient } from "./trpc/client.js";
-import { ClientRun } from "./client-run.js";
+import { createTRPCClient, CreateTRPCClientOptions } from "./trpc/client.js";
+import { ClientRun } from "./lib/run.client.js";
 
-type CreateRunOptions = _CreateRunOptions & {
-  apiUrl: string;
-}
+type CreateRunOptions = _CreateRunOptions & CreateTRPCClientOptions;
 
-export async function createRun({ apiUrl, ...opts }: CreateRunOptions): Promise<ClientRun> {
-  const trpc = createTRPCClient(apiUrl);
+export async function createRun({ apiUrl, headers, ...opts }: CreateRunOptions): Promise<ClientRun> {
+  const trpc = createTRPCClient({ apiUrl, headers });
+
   const { id } = await trpc.createRun.mutate(opts);
+
   return new ClientRun(trpc, id);
 }

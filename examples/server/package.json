@@ -16,9 +16,11 @@
   "dependencies": {
     "@000alen/compute": "workspace:*",
     "@000alen/compute-docker-adapter": "workspace:*",
-    "@trpc/server": "^11.1.2"
+    "@trpc/server": "^11.1.2",
+    "debug": "^4.4.0"
   },
   "devDependencies": {
+    "@types/debug": "^4.1.12",
     "@types/node": "^22.15.17",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"

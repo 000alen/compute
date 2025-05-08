@@ -30,6 +30,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
+    "@types/debug": "^4.1.12",
     "@types/dockerode": "^3.3.38",
     "@types/node": "^22.15.17",
     "tsx": "^4.19.4",
@@ -39,6 +40,7 @@
     "@000alen/compute-types": "workspace:*",
     "@trpc/client": "^11.1.2",
     "@trpc/server": "^11.1.2",
+    "debug": "^4.4.0",
     "dockerode": "^4.0.6",
     "eventsource": "^3.0.6",
     "simple-git": "^3.27.0",

@@ -9,7 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { TRPCError } from '@trpc/server';
 import { EventSource } from "eventsource";
 
-globalThis.EventSource = EventSource;
+if (typeof globalThis.EventSource === "undefined") {
+  globalThis.EventSource = EventSource as any;
+}
 
 interface CreateComputeRouterOptions {
   containerAdapter: ContainerAdapter;
@@ -169,6 +171,29 @@ export function createComputeRouter(options: CreateComputeRouterOptions) {
   const computeRouter = router({
     run: runRouter,
 
+    download: procedure
+      .input(
+        z.object({
+          id: z.string(),
+          path: z.string()
+        })
+      )
+      .subscription(async function* ({ input }) {
+        const { path, id } = input;
+
+        const run = runs.get(id);
+        if (!run)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Run ${id} not found`
+          });
+
+        const stream = await run.container.download(path)
+
+        yield* stream;
+
+      }),
+
     createRun: procedure
       .input(CreateRunOptions)
       .mutation(async ({ input: opts }) => {
@@ -230,5 +255,4 @@ export function createComputeRouter(options: CreateComputeRouterOptions) {
   return computeRouter;
 }
 
-// export type ComputeRouter = typeof computeRouter;
 export type ComputeRouter = ReturnType<typeof createComputeRouter>;
