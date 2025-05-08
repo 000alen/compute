@@ -18,6 +18,11 @@ export interface ExecInstance {
   inspect(): Promise<{ ExitCode: number | null }>;
 }
 
+// Source materialization interfaces
+export interface SourceProvider {
+  materializeSource(source: any, targetDir: string): Promise<void>;
+}
+
 export interface ContainerAdapter {
   createContainer(options: {
     Image: string;
@@ -36,4 +41,13 @@ export interface ContainerAdapter {
   getImage(name: string): { inspect(): Promise<any> };
   pull(imageName: string, options: {}, callback: (err: Error | null, stream?: NodeJS.ReadableStream) => void): void;
   modem: { followProgress(stream: NodeJS.ReadableStream, onFinished: (err: Error | null) => void): void };
+  
+  // Source materialization methods
+  materializeSource(source: any, targetDir: string): Promise<void>;
+  cloneGit(src: { url: string; ref?: string; depth?: number }, targetDir: string): Promise<void>;
+  extractTar(tarPath: string, targetDir: string): Promise<void>;
+  
+  // Runtime methods
+  ensureRuntimeImage(runtime: string): Promise<string>;
+  pullIfMissing(ref: string): Promise<void>;
 } 

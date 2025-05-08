@@ -16,29 +16,20 @@ import { mkdtemp } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { CreateRunOptions } from "./types.js";
-import { cloneGit, extractTar, ensureRuntimeImage } from "./utils.js";
 import { Run } from "./runs.js";
 import { DockerAdapter } from "./adapters/docker-adapter.js";
-// import { createTRPCClient } from "./trpc/client.js";
 
 export async function createRun(opts: CreateRunOptions): Promise<Run> {
-  // const trpc = createTRPCClient("http://localhost:3000");
-  // trpc.createRun.mutate(opts);
-
   // 1. Prepare workspace
   const tmpDir = await mkdtemp(join(tmpdir(), "runws-"));
 
   // 2. Materialise source code ➜ tmpDir/workspace
   const workspace = join(tmpDir, "workspace");
-  if (opts.source.type === "git") {
-    await cloneGit(opts.source, workspace);
-  } else {
-    await extractTar(opts.source.path, workspace);
-  }
+  const containerAdapter = new DockerAdapter();
+  await containerAdapter.materializeSource(opts.source, workspace);
 
   // 3. Build or pull runtime image
-  const containerAdapter = new DockerAdapter();
-  const image = await ensureRuntimeImage(containerAdapter, opts.runtime);
+  const image = await containerAdapter.ensureRuntimeImage(opts.runtime);
 
   // 4. Create container
   const portMap: Record<number, number> = {};

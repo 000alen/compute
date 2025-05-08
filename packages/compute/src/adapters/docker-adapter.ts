@@ -1,5 +1,6 @@
 import Docker from "dockerode";
 import { ContainerAdapter, ContainerInstance, ExecInstance } from "./container-adapter.js";
+import { SimpleGit, simpleGit } from "simple-git";
 
 export class DockerAdapter implements ContainerAdapter {
   private docker: Docker;
@@ -23,6 +24,59 @@ export class DockerAdapter implements ContainerAdapter {
 
   get modem() {
     return this.docker.modem as any;
+  }
+
+  // Source materialization methods
+  async materializeSource(source: any, targetDir: string): Promise<void> {
+    if (source.type === "git") {
+      await this.cloneGit(source, targetDir);
+    } else if (source.type === "tar") {
+      await this.extractTar(source.path, targetDir);
+    } else {
+      throw new Error(`Unsupported source type: ${source.type}`);
+    }
+  }
+
+  async cloneGit(src: { url: string; ref?: string; depth?: number }, targetDir: string): Promise<void> {
+    const git: SimpleGit = simpleGit();
+    await git.clone(src.url, targetDir, ["--depth", `${src.depth ?? 1}`]);
+    if (src.ref) {
+      await git.cwd(targetDir);
+      await git.checkout(src.ref);
+    }
+  }
+
+  async extractTar(tarPath: string, targetDir: string): Promise<void> {
+    const { spawn } = await import("child_process");
+    await new Promise<void>((res, rej) => {
+      const p = spawn("tar", ["-xf", tarPath, "-C", targetDir]);
+      p.on("exit", code => code === 0 ? res() : rej(new Error(`tar exited with ${code}`)));
+    });
+  }
+
+  async ensureRuntimeImage(runtime: string): Promise<string /*image id*/> {
+    // For the demo we support only Node variants mapped to Docker Hub "node:<ver>-slim" images.
+    if (runtime.startsWith("node")) {
+      const tag = runtime.replace(/^node/, ""); // "22" ➜ "22"
+      const image = `node:${tag}-slim`;
+      await this.pullIfMissing(image);
+      return image;
+    }
+    throw new Error(`Unsupported runtime ${runtime}`);
+  }
+
+  async pullIfMissing(ref: string): Promise<void> {
+    try {
+      await this.getImage(ref).inspect();
+    } catch (_) {
+      await new Promise<void>((res, rej) => {
+        this.pull(ref, {}, (err, stream) => {
+          if (err) return rej(err);
+          if (!stream) return rej(new Error("No stream"));
+          this.modem.followProgress(stream, (e: Error | null) => e ? rej(e) : res());
+        });
+      });
+    }
   }
 }
 
