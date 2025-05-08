@@ -4,6 +4,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
   const run = await createRun({
+    apiUrl: "http://localhost:3000",
     source: {
       type: "git",
       url: "https://github.com/gudmundur/nextjs-boilerplate.git",
@@ -23,7 +24,7 @@ async function main() {
     args: ["run", "dev"]
   });
 
-  console.log("App available at", run.publicUrl(3000));
+  console.log("App available at", await run.publicUrl(3000));
 
   await sleep(60_000)
     .then(async () => {

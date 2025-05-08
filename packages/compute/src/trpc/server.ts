@@ -1,27 +1,230 @@
-import { ContainerAdapter, CreateRunOptions } from '@000alen/compute-types';
+import { ContainerAdapter, CreateRunOptions, ExecInstance, ExecOptions } from '@000alen/compute-types';
+import { mkdtemp } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 import { procedure, router } from './trpc.js';
+import { Run } from "../runs.server.js";
+import { z } from "zod";
+import { v4 as uuidv4 } from 'uuid';
+import { TRPCError } from '@trpc/server';
 
 interface CreateComputeRouterOptions {
   containerAdapter: ContainerAdapter;
 }
 
-export function createComputeRouter(options: CreateComputeRouterOptions) {
-  const computeRouter = router({
-    container: router({
-      exec: procedure.mutation(async ({ input }) => { }),
+interface CreateRunRouterOptions {
+  runs: Map<string, Run>;
+}
 
-      start: procedure.mutation(async ({ input }) => { }),
+export function createRunRouter(options: CreateRunRouterOptions) {
+  const execs = new Map<string, ExecInstance>();
 
-      stop: procedure.mutation(async ({ input }) => { }),
+  const runRouter = router({
+    execs: router({
+      start: procedure
+        .input(
+          z.object({
+            id: z.string(),
+            hijack: z.boolean(),
+            stdin: z.boolean(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const { id, ...opts } = input;
 
-      remove: procedure.mutation(async ({ input }) => { }),
+          if (!execs.has(id))
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `Exec ${id} not found`
+            });
 
-      inspect: procedure.query(async ({ input }) => { }),
+          const exec = execs.get(id);
+          if (!exec)
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Exec ${id} not found`
+            });
+
+          await exec.start(opts);
+        }),
+
+      inspect: procedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ input }) => {
+          const { id } = input;
+
+          if (!execs.has(id))
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `Exec ${id} not found`
+            });
+
+          const exec = execs.get(id);
+          if (!exec)
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Exec ${id} not found`
+            });
+
+          await exec.inspect();
+        }),
     }),
+
+    execWait: procedure
+      .input(ExecOptions.extend({ id: z.string() }))
+      .mutation(async ({ input }) => {
+        const { id, ...opts } = input;
+
+        if (!options.runs.has(id))
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Run ${id} not found`
+          });
+
+        const run = options.runs.get(id);
+        if (!run)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Run ${id} not found`
+          });
+
+        return await run.execWait(opts);
+      }),
+
+    exec: procedure
+      .input(ExecOptions.extend({ id: z.string() }))
+      .mutation(async ({ input }) => {
+        const { id, ...opts } = input;
+
+        if (!options.runs.has(id))
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Run ${id} not found`
+          });
+
+        const run = options.runs.get(id);
+        if (!run)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Run ${id} not found`
+          });
+
+        const execId = uuidv4();
+        const exec = await run.exec(opts);
+        execs.set(execId, exec);
+
+        return id;
+      }),
+
+    publicUrl: procedure
+      .input(z.object({ port: z.number(), id: z.string() }))
+      .mutation(async ({ input }) => {
+        const { id, port } = input;
+
+        if (!options.runs.has(id))
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Run ${id} not found`
+          });
+
+        const run = options.runs.get(id);
+        if (!run)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Run ${id} not found`
+          });
+
+        return await run.publicUrl(port);
+      }),
+
+    dispose: procedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ input }) => {
+        const { id } = input;
+
+        if (!options.runs.has(id))
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Run ${id} not found`
+          });
+
+        const run = options.runs.get(id);
+        if (!run)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Run ${id} not found`
+          });
+
+        await run.dispose();
+        options.runs.delete(id);
+      }),
+  });
+
+  return runRouter;
+}
+
+export function createComputeRouter(options: CreateComputeRouterOptions) {
+  const { containerAdapter } = options;
+
+  const runs = new Map<string, Run>();
+
+  const runRouter = createRunRouter({ runs });
+
+  const computeRouter = router({
+    run: runRouter,
 
     createRun: procedure
       .input(CreateRunOptions)
-      .mutation(async ({ input: opts }) => { }),
+      .mutation(async ({ input: opts }) => {
+        // 1. Prepare workspace
+        const tmpDir = await mkdtemp(join(tmpdir(), "runws-"));
+
+        // 2. Materialise source code ➜ tmpDir/workspace
+        const workspace = join(tmpDir, "workspace");
+        await containerAdapter.materializeSource(opts.source, workspace);
+
+        // 3. Build or pull runtime image
+        const image = await containerAdapter.ensureRuntimeImage(opts.runtime);
+
+        // 4. Create container
+        const portMap: Record<number, number> = {};
+        const exposedPorts: Record<string, {}> = {};
+        const hostConfig: { PortBindings?: Record<string, Array<{ HostPort: string }>> } = { PortBindings: {} };
+        for (const p of opts.ports ?? []) {
+          exposedPorts[`${p}/tcp`] = {};
+          hostConfig.PortBindings![`${p}/tcp`] = [{ HostPort: "0" }]; // 0 ➜ random host port
+        }
+
+        const container = await containerAdapter.createContainer({
+          Image: image,
+          Cmd: ["sleep", "86400"], // long‑running idle process. Keep container alive, commands exec via Docker Exec.
+          Tty: true,
+          WorkingDir: "/workspace",
+          Labels: opts.labels,
+          ExposedPorts: exposedPorts,
+          HostConfig: {
+            ...hostConfig,
+            AutoRemove: true,
+            Binds: [`${workspace}:/workspace`],
+          },
+        });
+
+        await container.start();
+
+        // Retrieve host ports
+        const insp = await container.inspect();
+        for (const [k, v] of Object.entries(insp.NetworkSettings.Ports ?? {})) {
+          const containerPort = parseInt(k.split("/")[0], 10);
+          const hostPort = v?.[0]?.HostPort ? parseInt(v[0].HostPort, 10) : undefined;
+          if (hostPort) portMap[containerPort] = hostPort;
+        }
+
+        const id = uuidv4();
+        const run = new Run(containerAdapter, container, tmpDir, portMap);
+        runs.set(id, run);
+
+        return id;
+      }),
   });
 
   return computeRouter;

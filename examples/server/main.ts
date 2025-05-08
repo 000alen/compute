@@ -8,4 +8,5 @@ const router = createComputeRouter({ containerAdapter });
 
 const server = createHTTPServer({ router });
 
-server.listen(3000);
+server
+  .listen(3000)
