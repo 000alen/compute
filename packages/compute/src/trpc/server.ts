@@ -223,7 +223,11 @@ export function createComputeRouter(options: CreateComputeRouterOptions) {
         const run = new Run(containerAdapter, container, tmpDir, portMap);
         runs.set(id, run);
 
-        return id;
+        return {
+          id,
+          tmpDir,
+          portMap,
+        }
       }),
   });
 

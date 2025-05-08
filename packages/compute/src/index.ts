@@ -22,6 +22,6 @@ type CreateRunOptions = _CreateRunOptions & {
 
 export async function createRun({ apiUrl, ...opts }: CreateRunOptions): Promise<ClientRun> {
   const trpc = createTRPCClient(apiUrl);
-  const id = await trpc.createRun.mutate(opts);
+  const { id } = await trpc.createRun.mutate(opts);
   return new ClientRun(trpc, id);
 }
