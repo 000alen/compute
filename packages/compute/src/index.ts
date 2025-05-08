@@ -15,10 +15,10 @@
 import { mkdtemp } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { CreateRunOptions } from "./types";
-import { cloneGit, extractTar, ensureRuntimeImage } from "./utils";
-import { Run } from "./runs";
-import { DockerAdapter } from "./adapters/docker-adapter";
+import { CreateRunOptions } from "./types.js";
+import { cloneGit, extractTar, ensureRuntimeImage } from "./utils.js";
+import { Run } from "./runs.js";
+import { DockerAdapter } from "./adapters/docker-adapter.js";
 
 export async function createRun(opts: CreateRunOptions): Promise<Run> {
   // 1. Prepare workspace

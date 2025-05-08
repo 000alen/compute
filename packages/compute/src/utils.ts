@@ -1,6 +1,6 @@
-import simpleGit, { SimpleGit } from "simple-git";
-import { GitSource } from "./types";
-import { ContainerAdapter } from "./adapters/container-adapter";
+import { SimpleGit, simpleGit } from "simple-git";
+import { GitSource } from "./types.js";
+import { ContainerAdapter } from "./adapters/container-adapter.js";
 
 export async function cloneGit(src: GitSource, targetDir: string): Promise<void> {
   const git: SimpleGit = simpleGit();

@@ -1,5 +1,5 @@
 import Docker from "dockerode";
-import { ContainerAdapter, ContainerInstance, ExecInstance } from "./container-adapter";
+import { ContainerAdapter, ContainerInstance, ExecInstance } from "./container-adapter.js";
 
 export class DockerAdapter implements ContainerAdapter {
   private docker: Docker;

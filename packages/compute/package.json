@@ -2,8 +2,25 @@
   "name": "@000alen/compute",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./trpc/client": {
+      "import": "./dist/trpc/client.js",
+      "types": "./dist/trpc/client.d.ts"
+    },
+    "./trpc/server": {
+      "import": "./dist/trpc/server.js",
+      "types": "./dist/trpc/server.d.ts"
+    }
+  },
   "type": "module",
   "scripts": {
     "build": "tsc"
@@ -23,6 +40,7 @@
     "@trpc/server": "^11.1.2",
     "dockerode": "^4.0.6",
     "simple-git": "^3.27.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^3.24.4"
   }
 }

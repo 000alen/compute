@@ -1,2 +1,2 @@
-export * from './container-adapter';
-export * from './docker-adapter'; 
+export * from './container-adapter.js';
+export * from './docker-adapter.js'; 
