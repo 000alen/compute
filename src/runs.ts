@@ -1,16 +1,16 @@
 import { rm } from "fs/promises";
-import Docker, { Container, Exec, ExecStartOptions } from "dockerode";
 import { ExecOptions } from "./types";
+import { ContainerAdapter, ContainerInstance, ExecInstance } from "./adapters/container-adapter";
 
 export class Run {
-  private readonly docker: Docker;
-  private readonly container: Container;
+  private readonly containerAdapter: ContainerAdapter;
+  private readonly container: ContainerInstance;
   private readonly tmpDir: string;
   private readonly portMap: Record<number, number>; // container → host
   private cleaned = false;
 
-  constructor(docker: Docker, container: Container, tmpDir: string, portMap: Record<number, number>) {
-    this.docker = docker;
+  constructor(containerAdapter: ContainerAdapter, container: ContainerInstance, tmpDir: string, portMap: Record<number, number>) {
+    this.containerAdapter = containerAdapter;
     this.container = container;
     this.tmpDir = tmpDir;
     this.portMap = portMap;
@@ -21,17 +21,17 @@ export class Run {
    */
   async execWait(opts: ExecOptions): Promise<number> {
     const exec = await this.createExec(opts);
-    await exec.start({ hijack: true, stdin: false } as ExecStartOptions);
+    await exec.start({ hijack: true, stdin: false });
     const { ExitCode } = await exec.inspect();
     return ExitCode ?? -1;
   }
 
   /**
-   * Starts a command *without* waiting. Returns Docker Exec handle.
+   * Starts a command *without* waiting. Returns ExecInstance handle.
    */
-  async exec(opts: ExecOptions): Promise<Exec> {
+  async exec(opts: ExecOptions): Promise<ExecInstance> {
     const exec = await this.createExec(opts);
-    await exec.start({ hijack: true, stdin: false } as ExecStartOptions);
+    await exec.start({ hijack: true, stdin: false });
     return exec;
   }
 
@@ -61,7 +61,7 @@ export class Run {
 
   /************ Internals ************/
 
-  private async createExec({ cmd, args = [], env = {}, workdir = "/workspace" }: ExecOptions): Promise<Exec> {
+  private async createExec({ cmd, args = [], env = {}, workdir = "/workspace" }: ExecOptions): Promise<ExecInstance> {
     if (!cmd) throw new Error("ExecOptions.cmd is required");
     return this.container.exec({
       Cmd: [cmd, ...args],
