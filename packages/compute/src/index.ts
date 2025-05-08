@@ -12,12 +12,12 @@
  * $ npm i simple-git dockerode uuid
  */
 
+import { CreateRunOptions } from "@000alen/compute-types";
+import { DockerAdapter } from "@000alen/compute-docker-adapter";
 import { mkdtemp } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { CreateRunOptions } from "./types.js";
 import { Run } from "./runs.js";
-import { DockerAdapter } from "./adapters/docker-adapter.js";
 
 export async function createRun(opts: CreateRunOptions): Promise<Run> {
   // 1. Prepare workspace

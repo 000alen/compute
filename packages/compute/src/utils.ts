@@ -1,4 +1,4 @@
-import { ContainerAdapter } from "./adapters/container-adapter.js";
+import { ContainerAdapter } from "@000alen/compute-types";
 
 export async function ensureRuntimeImage(containerAdapter: ContainerAdapter, runtime: string): Promise<string /*image id*/> {
   // For the demo we support only Node variants mapped to Docker Hub "node:<ver>-slim" images.

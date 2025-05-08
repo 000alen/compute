@@ -1,5 +1,5 @@
 import Docker from "dockerode";
-import { ContainerAdapter, ContainerInstance, ExecInstance } from "./container-adapter.js";
+import { ContainerAdapter, ContainerInstance, ExecInstance } from "@000alen/compute-types";
 import { SimpleGit, simpleGit } from "simple-git";
 
 export class DockerAdapter implements ContainerAdapter {
@@ -80,7 +80,7 @@ export class DockerAdapter implements ContainerAdapter {
   }
 }
 
-class DockerContainerInstance implements ContainerInstance {
+export class DockerContainerInstance implements ContainerInstance {
   private container: Docker.Container;
 
   constructor(container: Docker.Container) {
@@ -115,7 +115,7 @@ class DockerContainerInstance implements ContainerInstance {
   }
 }
 
-class DockerExecInstance implements ExecInstance {
+export class DockerExecInstance implements ExecInstance {
   private exec: Docker.Exec;
 
   constructor(exec: Docker.Exec) {

@@ -1,6 +1,5 @@
+import { ExecOptions, ContainerAdapter, ContainerInstance, ExecInstance } from "@000alen/compute-types";
 import { rm } from "fs/promises";
-import { ExecOptions } from "./types.js";
-import { ContainerAdapter, ContainerInstance, ExecInstance } from "./adapters/container-adapter.js";
 
 export class Run {
   private readonly containerAdapter: ContainerAdapter;

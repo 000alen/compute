@@ -1,4 +1,4 @@
-import { CreateRunOptions } from '../types.js';
+import { CreateRunOptions } from '@000alen/compute-types';
 import { procedure, router } from './trpc.js';
 
 export function createComputeRouter() {

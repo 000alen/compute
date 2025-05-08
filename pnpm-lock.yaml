@@ -49,6 +49,12 @@ importers:
 
   packages/compute:
     dependencies:
+      '@000alen/compute-docker-adapter':
+        specifier: workspace:*
+        version: link:../docker
+      '@000alen/compute-types':
+        specifier: workspace:*
+        version: link:../types
       '@trpc/client':
         specifier: ^11.1.2
         version: 11.1.2(@trpc/server@11.1.2(typescript@5.8.3))(typescript@5.8.3)
@@ -77,6 +83,44 @@ importers:
       tsx:
         specifier: ^4.19.4
         version: 4.19.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/docker:
+    dependencies:
+      '@000alen/compute-types':
+        specifier: workspace:*
+        version: link:../types
+      dockerode:
+        specifier: ^4.0.6
+        version: 4.0.6
+      simple-git:
+        specifier: ^3.27.0
+        version: 3.27.0
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
+    devDependencies:
+      '@types/dockerode':
+        specifier: ^3.3.38
+        version: 3.3.38
+      '@types/node':
+        specifier: ^22.15.17
+        version: 22.15.17
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/types:
+    dependencies:
+      zod:
+        specifier: ^3.24.4
+        version: 3.24.4
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.17
+        version: 22.15.17
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
