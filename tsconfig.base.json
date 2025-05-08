@@ -1,6 +1,4 @@
 {
-  "include": ["./src"],
-  "exclude": ["./node_modules/**/*", "./dist/**/*"],
   "compilerOptions": {
     "disableSizeLimit": true,
     "declaration": true,
@@ -16,8 +14,6 @@
     "downlevelIteration": true,
     "inlineSourceMap": true,
     "experimentalDecorators": true,
-    "jsx": "react-jsx",
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "jsx": "react-jsx"
   }
 }

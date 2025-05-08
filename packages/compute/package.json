@@ -1,0 +1,28 @@
+{
+  "name": "@000alen/compute",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "@types/dockerode": "^3.3.38",
+    "@types/node": "^22.15.17",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@trpc/client": "^11.1.2",
+    "@trpc/server": "^11.1.2",
+    "dockerode": "^4.0.6",
+    "simple-git": "^3.27.0",
+    "uuid": "^11.1.0"
+  }
+}

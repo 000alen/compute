@@ -1,4 +1,4 @@
-import { createRun } from "../src";
+import { createRun } from "@000alen/compute";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -1,27 +1,16 @@
 {
-  "name": "compute",
+  "name": "@000alen/compute-workspace",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "tsx examples/main.ts"
+    "build": "lerna run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
-    "@types/dockerode": "^3.3.38",
-    "@types/node": "^22.15.17",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
-  },
-  "dependencies": {
-    "dockerode": "^4.0.6",
-    "simple-git": "^3.27.0",
-    "uuid": "^11.1.0"
+    "lerna": "^8.2.2"
   }
 }
