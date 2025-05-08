@@ -6,7 +6,13 @@ const containerAdapter = new DockerAdapter();
 
 const router = createComputeRouter({ containerAdapter });
 
-const server = createHTTPServer({ router });
+const server = createHTTPServer({
+  router,
+  middleware: async (req, res, next) => {
+    console.log(req.url);
+    next();
+  }
+});
 
 server
   .listen(3000)
