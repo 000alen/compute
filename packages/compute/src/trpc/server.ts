@@ -13,7 +13,7 @@ export const computeRouter = router({
     inspect: procedure.query(async ({ input }) => { }),
   }),
 
-  createContainer: procedure.mutation(async ({ input }) => { }),
+  createRun: procedure.mutation(async ({ input }) => { }),
 });
 
 export type ComputeRouter = typeof computeRouter;
