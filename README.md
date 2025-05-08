@@ -8,7 +8,8 @@ A minimal open-source re-implementation of the experimental `@vercel/runs` API. 
 - Stream command output logs
 - Expose container ports to the host
 - Easy cleanup of containers and workspaces
-- Support for Git repositories and tar archives as source code
+- Support for Git repositories as source code
+- Client-server architecture with tRPC
 
 ## Installation
 
@@ -25,61 +26,99 @@ pnpm add @000alen/compute
 - [simple-git](https://github.com/steveukx/git-js) - Lightweight git client
 - [dockerode](https://github.com/apocas/dockerode) - Node.js Docker API
 - [uuid](https://github.com/uuidjs/uuid) - Cryptographically-strong UUID generation
+- [tRPC](https://trpc.io/) - End-to-end typesafe APIs
 
 ## Usage
 
+### Client Example
+
 ```typescript
-import { createRun } from '@000alen/compute';
+import { createRun } from "@000alen/compute";
 
 // Create a run from a Git repository
 const run = await createRun({
+  apiUrl: "http://localhost:3000", // URL to your Compute server
   source: {
-    type: 'git',
-    url: 'https://github.com/username/repo.git',
-    ref: 'main' // Optional: branch, tag, or commit hash
+    type: "git",
+    url: "https://github.com/username/repo.git",
   },
-  runtime: {
-    name: 'node',
-    tag: '18'
-  },
-  ports: [3000, 8080], // Ports to expose
+  runtime: "node22", // Runtime to use
+  ports: [3000], // Ports to expose
+  labels: { "created-by": "example" }, // Optional labels
+});
+console.log("Run created", run.id);
+
+// Execute commands in the container
+const { exec: installExec, stream: installStream } = await run.exec({
+  cmd: "npm",
+  args: ["install"]
 });
 
-// Execute a command in the container
-const { output } = await run.exec('npm install && npm start');
-console.log(output);
+// Stream the output
+for await (const chunk of installStream) {
+  console.log(chunk);
+}
 
-// Get mapped port
-const hostPort = run.getHostPort(3000);
-console.log(`App is running on http://localhost:${hostPort}`);
+// Run another command
+const { exec: devExec, stream: devStream } = await run.exec({
+  cmd: "npm",
+  args: ["run", "dev"]
+});
+
+// Access the application via the exposed port
+console.log("App available at", await run.publicUrl(3000));
 
 // Clean up when done
-await run.cleanup();
+await run.dispose();
+```
+
+### Server Example
+
+```typescript
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { createComputeRouter } from '@000alen/compute/trpc/server';
+import { DockerAdapter } from '@000alen/compute-docker-adapter';
+
+// Create a Docker adapter
+const containerAdapter = new DockerAdapter();
+
+// Create the compute router with the adapter
+const router = createComputeRouter({ containerAdapter });
+
+// Create and start a tRPC HTTP server
+const server = createHTTPServer({
+  router,
+  middleware: async (req, res, next) => {
+    console.log(req.url);
+    next();
+  }
+});
+
+server.listen(3000);
 ```
 
 ## API
 
 ### `createRun(options)`
 
-Creates a new run instance.
+Creates a new run instance with a connection to the Compute server.
 
 #### Options
 
+- `apiUrl`: URL to the Compute server
 - `source`: Source code configuration
   - Git source: `{ type: 'git', url: string, ref?: string }`
-  - Tar source: `{ type: 'tar', path: string }`
-- `runtime`: Runtime configuration
-  - `{ name: string, tag: string }`
+- `runtime`: Runtime to use (e.g., "node22")
 - `ports` (optional): Array of container ports to expose
 - `labels` (optional): Docker container labels
 
 #### Returns
 
-A `Run` instance with methods:
+A `ClientRun` instance with methods:
 
-- `exec(command)`: Execute a command in the container
-- `getHostPort(containerPort)`: Get the host port mapped to a container port
-- `cleanup()`: Remove the container and temporary files
+- `exec({ cmd, args })`: Execute a command in the container
+- `publicUrl(containerPort)`: Get the public URL for an exposed port
+- `dispose()`: Remove the container and clean up resources
 
 ## License
 
