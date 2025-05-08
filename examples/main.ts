@@ -1,5 +1,7 @@
 import { createRun } from "../src";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function main() {
   const run = await createRun({
     source: {
@@ -15,11 +17,13 @@ async function main() {
   await run.exec({ cmd: "npm", args: ["run", "dev"] });
   console.log("App available at", run.publicUrl(3000));
 
-  // Allow the dev server to run; press Ctrl+C to terminate.
-  process.on("SIGINT", async () => {
-    await run.dispose();
-    process.exit(0);
-  });
+  await sleep(60_000)
+    .then(async () => {
+      await run.dispose();
+    })
+    .finally(() => {
+      process.exit(0);
+    });
 }
 
 main()
