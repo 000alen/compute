@@ -19,8 +19,12 @@ import { CreateRunOptions } from "./types.js";
 import { cloneGit, extractTar, ensureRuntimeImage } from "./utils.js";
 import { Run } from "./runs.js";
 import { DockerAdapter } from "./adapters/docker-adapter.js";
+// import { createTRPCClient } from "./trpc/client.js";
 
 export async function createRun(opts: CreateRunOptions): Promise<Run> {
+  // const trpc = createTRPCClient("http://localhost:3000");
+  // trpc.createRun.mutate(opts);
+
   // 1. Prepare workspace
   const tmpDir = await mkdtemp(join(tmpdir(), "runws-"));
 

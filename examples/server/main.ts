@@ -1,8 +1,8 @@
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { computeRouter } from '@000alen/compute/trpc/server';
+import { createComputeRouter } from '@000alen/compute/trpc/server';
 
-const server = createHTTPServer({
-  router: computeRouter,
-});
+const router = createComputeRouter();
+
+const server = createHTTPServer({ router });
 
 server.listen(3000);

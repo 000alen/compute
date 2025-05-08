@@ -13,8 +13,16 @@ async function main() {
     labels: { "created-by": "runs.ts example" },
   });
 
-  await run.execWait({ cmd: "npm", args: ["install"] });
-  await run.exec({ cmd: "npm", args: ["run", "dev"] });
+  await run.execWait({
+    cmd: "npm",
+    args: ["install"]
+  });
+
+  await run.exec({
+    cmd: "npm",
+    args: ["run", "dev"]
+  });
+
   console.log("App available at", run.publicUrl(3000));
 
   await sleep(60_000)

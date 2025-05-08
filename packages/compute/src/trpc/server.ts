@@ -1,19 +1,27 @@
+import { CreateRunOptions } from '../types.js';
 import { procedure, router } from './trpc.js';
 
-export const computeRouter = router({
-  container: router({
-    exec: procedure.mutation(async ({ input }) => { }),
+export function createComputeRouter() {
+  const computeRouter = router({
+    container: router({
+      exec: procedure.mutation(async ({ input }) => { }),
 
-    start: procedure.mutation(async ({ input }) => { }),
+      start: procedure.mutation(async ({ input }) => { }),
 
-    stop: procedure.mutation(async ({ input }) => { }),
+      stop: procedure.mutation(async ({ input }) => { }),
 
-    remove: procedure.mutation(async ({ input }) => { }),
+      remove: procedure.mutation(async ({ input }) => { }),
 
-    inspect: procedure.query(async ({ input }) => { }),
-  }),
+      inspect: procedure.query(async ({ input }) => { }),
+    }),
 
-  createRun: procedure.mutation(async ({ input }) => { }),
-});
+    createRun: procedure
+      .input(CreateRunOptions)
+      .mutation(async ({ input: opts }) => { }),
+  });
 
-export type ComputeRouter = typeof computeRouter;
+  return computeRouter;
+}
+
+// export type ComputeRouter = typeof computeRouter;
+export type ComputeRouter = ReturnType<typeof createComputeRouter>;

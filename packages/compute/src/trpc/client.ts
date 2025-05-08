@@ -1,10 +1,12 @@
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient as _createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { ComputeRouter } from './server.js';
 
-export const trpc = createTRPCClient<ComputeRouter>({
-  links: [
-    httpBatchLink({
-      url: 'http://localhost:3000',
-    }),
-  ],
-});
+export function createTRPCClient(url: string) {
+  const trpc = _createTRPCClient<ComputeRouter>({
+    links: [
+      httpBatchLink({ url: url }),
+    ],
+  });
+
+  return trpc;
+}
