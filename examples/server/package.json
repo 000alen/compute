@@ -15,6 +15,7 @@
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
     "@000alen/compute": "workspace:*",
+    "@000alen/compute-docker-adapter": "workspace:*",
     "@trpc/server": "^11.1.2"
   },
   "devDependencies": {

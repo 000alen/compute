@@ -1,7 +1,11 @@
-import { CreateRunOptions } from '@000alen/compute-types';
+import { ContainerAdapter, CreateRunOptions } from '@000alen/compute-types';
 import { procedure, router } from './trpc.js';
 
-export function createComputeRouter() {
+interface CreateComputeRouterOptions {
+  containerAdapter: ContainerAdapter;
+}
+
+export function createComputeRouter(options: CreateComputeRouterOptions) {
   const computeRouter = router({
     container: router({
       exec: procedure.mutation(async ({ input }) => { }),

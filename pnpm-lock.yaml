@@ -33,6 +33,9 @@ importers:
       '@000alen/compute':
         specifier: workspace:*
         version: link:../../packages/compute
+      '@000alen/compute-docker-adapter':
+        specifier: workspace:*
+        version: link:../../packages/docker
       '@trpc/server':
         specifier: ^11.1.2
         version: 11.1.2(typescript@5.8.3)
