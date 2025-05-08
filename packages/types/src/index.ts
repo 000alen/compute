@@ -19,16 +19,21 @@ export type Source = z.infer<typeof Source>;
 
 export const CreateRunOptions = z.object({
   source: Source,
-  runtime: z.union([z.literal("node22"), z.literal("node20"), z.literal("python312"), z.string()]),
-  ports: z.array(z.number()).optional(),
-  labels: z.record(z.string(), z.string()).optional(),
+  runtime: z.union([
+    z.literal("node22"),
+    z.literal("node20"),
+    z.literal("python312"),
+    z.string()
+  ]),
+  ports: z.number().array().optional(),
+  labels: z.record(z.string()).optional(),
 });
 export type CreateRunOptions = z.infer<typeof CreateRunOptions>;
 
 export const ExecOptions = z.object({
   cmd: z.string(),
-  args: z.array(z.string()).optional(),
-  env: z.record(z.string(), z.string()).optional(),
+  args: z.string().array().optional(),
+  env: z.record(z.string()).optional(),
   workdir: z.string().optional(),
 });
 export type ExecOptions = z.infer<typeof ExecOptions>;
