@@ -1,4 +1,4 @@
-import { createRun } from "../main";
+import { createRun } from "../src";
 
 async function main() {
   const run = await createRun({
