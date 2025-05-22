@@ -1,7 +1,4 @@
 import { ContainerAdapter, CreateRunOptions, ExecInstance, ExecOptions } from '@000alen/compute-types';
-import { mkdtemp } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
 import { procedure, router } from './trpc.js';
 import { Run } from "../lib/run.js";
 import { z } from "zod";
@@ -197,49 +194,10 @@ export function createComputeRouter(options: CreateComputeRouterOptions) {
     createRun: procedure
       .input(CreateRunOptions)
       .mutation(async ({ input: opts }) => {
-        // 1. Prepare workspace
-        const tmpDir = await mkdtemp(join(tmpdir(), "runws-"));
+        // Delegate container creation to the adapter
+        const { container, tmpDir, portMap } = await containerAdapter.createRun(opts);
 
-        // 2. Materialise source code ➜ tmpDir/workspace
-        const workspace = join(tmpDir, "workspace");
-        await containerAdapter.materializeSource(opts.source, workspace);
-
-        // 3. Build or pull runtime image
-        const image = await containerAdapter.ensureRuntimeImage(opts.runtime);
-
-        // 4. Create container
-        const portMap: Record<number, number> = {};
-        const exposedPorts: Record<string, {}> = {};
-        const hostConfig: { PortBindings?: Record<string, Array<{ HostPort: string }>> } = { PortBindings: {} };
-        for (const p of opts.ports ?? []) {
-          exposedPorts[`${p}/tcp`] = {};
-          hostConfig.PortBindings![`${p}/tcp`] = [{ HostPort: "0" }]; // 0 ➜ random host port
-        }
-
-        const container = await containerAdapter.createContainer({
-          Image: image,
-          Cmd: ["sleep", "86400"], // long‑running idle process. Keep container alive, commands exec via Docker Exec.
-          Tty: true,
-          WorkingDir: "/workspace",
-          Labels: opts.labels,
-          ExposedPorts: exposedPorts,
-          HostConfig: {
-            ...hostConfig,
-            AutoRemove: true,
-            Binds: [`${workspace}:/workspace`],
-          },
-        });
-
-        await container.start();
-
-        // Retrieve host ports
-        const insp = await container.inspect();
-        for (const [k, v] of Object.entries(insp.NetworkSettings.Ports ?? {})) {
-          const containerPort = parseInt(k.split("/")[0], 10);
-          const hostPort = v?.[0]?.HostPort ? parseInt(v[0].HostPort, 10) : undefined;
-          if (hostPort) portMap[containerPort] = hostPort;
-        }
-
+        // Create and store the run
         const id = uuidv4();
         const run = new Run(container, tmpDir, portMap);
         runs.set(id, run);

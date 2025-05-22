@@ -1,4 +1,4 @@
-import { ExecOptions, DockerExecInspectInfo } from "@000alen/compute-types";
+import { ExecOptions, ExecInfo } from "@000alen/compute-types";
 import { TRPCClient } from "@trpc/client";
 import type { ComputeRouter } from "../trpc/server.js";
 
@@ -14,7 +14,7 @@ export class ClientExecInstance {
     this.id = id;
   }
 
-  async inspect(): Promise<DockerExecInspectInfo> {
+  async inspect(): Promise<ExecInfo> {
     return await this.trpc.run.execs.inspect.mutate({ id: this.id });
   }
 }

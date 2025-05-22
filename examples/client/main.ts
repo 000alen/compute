@@ -59,47 +59,52 @@ async function main() {
     },
     runtime: "node22",
     ports: [3000],
-  });
+  })
+    .then(run => {
+      log("run created", run.id);
 
-  log("run created", run.id);
+      return run;
+    });
 
-  const stream = await run.download("/workspace/package.json");
-  const buffer = await readFileBuffer(Readable.fromWeb(stream), "package.json");
-  log(buffer.toString("utf-8"));
+  await run
+    .download("/workspace/package.json")
+    .then(Readable.fromWeb)
+    .then(async stream => {
+      const buffer = await readFileBuffer(stream, "package.json");
+      log(buffer.toString("utf-8"));
+    });
+
 
   log("installing dependencies");
 
-  const { exec: installExec, stream: installStream } = await run.exec({
-    cmd: "npm",
-    args: ["install"]
-  });
+  await run
+    .exec({ cmd: "npm", args: ["install"] })
+    .then(async ({ exec, stream }) => {
+      log("install exec started", exec.id);
 
-  log("install exec started", installExec.id);
-
-  for await (const chunk of installStream) {
-    log(chunk);
-  }
-
-  log("downloading package.json");
+      for await (const chunk of stream) {
+        log(chunk);
+      }
+    })
 
   log("running dev server");
 
-  const { exec: devExec } = await run.exec({
-    cmd: "npm",
-    args: ["run", "dev"]
-  });
+  run
+    .exec({ cmd: "npm", args: ["run", "dev"] })
+    .then(async ({ exec, stream }) => {
+      log("dev exec started", exec.id);
 
-  log("dev exec started", devExec.id);
+      for await (const chunk of stream) {
+        log(chunk);
+      }
+    })
+
 
   log("app available at", await run.publicUrl(3000));
 
-  await sleep(30_000)
-    .then(async () => {
-      await run.dispose();
-    })
-    .finally(async () => {
-      process.exit(0);
-    });
+  await sleep(10_000)
+    .then(async () => await run.dispose())
+    .finally(() => process.exit(0));
 }
 
 main()

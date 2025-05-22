@@ -11,6 +11,11 @@
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
-    "lerna": "^8.2.2"
+    "@types/aws-lambda": "8.10.149",
+    "lerna": "^8.2.2",
+    "sst": "^3.16.0"
+  },
+  "dependencies": {
+    "sst": "3.16.0"
   }
 }
