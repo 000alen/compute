@@ -19,7 +19,8 @@
     "@aws-sdk/client-ecs": "^3.0.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
     "@aws-sdk/client-dynamodb": "^3.0.0",
-    "@aws-sdk/client-s3": "^3.0.0"
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/client-sqs": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.17",
