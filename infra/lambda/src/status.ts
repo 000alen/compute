@@ -6,11 +6,13 @@ import { ECSClient, DescribeTasksCommand } from "@aws-sdk/client-ecs";
 
 interface StatusRequest {
   taskId?: string;
+  pathParameters?: { taskId?: string };
   queryStringParameters?: { taskId?: string };
 }
 
 export async function handler(event: StatusRequest) {
-  const taskId = event.taskId || event.queryStringParameters?.taskId;
+  // Support pathParameters from API Gateway as well as query strings and direct invocation
+  const taskId = event.taskId || event.pathParameters?.taskId || event.queryStringParameters?.taskId;
   
   if (!taskId) {
     return {
