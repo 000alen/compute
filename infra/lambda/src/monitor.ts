@@ -142,8 +142,9 @@ async function performHealthCheck(): Promise<any> {
       healthStatus.status = "unhealthy";
     }
     
+    // Always return 200 and include health status in the body
     return {
-      statusCode: healthStatus.status === "healthy" ? 200 : 503,
+      statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(healthStatus, null, 2)
     };

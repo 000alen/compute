@@ -138,21 +138,21 @@ async function handleDirectRequest(event: TaskRequest) {
     
     console.log(`Task ${taskId} queued successfully to ${useHighPriorityQueue ? 'priority' : 'standard'} queue`);
     
+    // Return REST API-compatible response without exposing internal requestId
     return {
       statusCode: 202, // Accepted
       headers: {
-        'Content-Type': 'application/json',
-        'X-Request-ID': requestId
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         success: true,
         taskId,
-        requestId,
         status: "PENDING",
         priority,
         queueType: useHighPriorityQueue ? "priority" : "standard",
         message: "Task queued for processing",
-        statusUrl: `${Resource.TaskStatusHandler.url}?taskId=${taskId}`,
+        // Point at API Gateway route for task status
+        statusUrl: `${Resource.ComputeApi.url}/tasks/${taskId}`,
         estimatedStartTime: new Date(Date.now() + (priority >= 5 ? 30000 : 120000)).toISOString()
       }, null, 2),
     };

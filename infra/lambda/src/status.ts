@@ -41,12 +41,16 @@ export async function handler(event: StatusRequest) {
       };
     }
     
+    // Extract the task ARN for status checks
+    const taskArn = dbResponse.Item.taskArn?.S!;
+    
+    // Base task data from DynamoDB
     const taskData = {
       taskId: dbResponse.Item.taskId?.S,
-      taskArn: dbResponse.Item.taskArn?.S!,
-      requestId: dbResponse.Item.requestId?.S,
       command: dbResponse.Item.command?.S,
       status: dbResponse.Item.status?.S,
+      priority: dbResponse.Item.priority?.N ? parseInt(dbResponse.Item.priority.N, 10) : undefined,
+      userId: dbResponse.Item.userId?.S,
       createdAt: dbResponse.Item.createdAt?.S,
       completedAt: dbResponse.Item.completedAt?.S,
       metadata: dbResponse.Item.metadata?.S ? JSON.parse(dbResponse.Item.metadata.S) : {}
@@ -57,12 +61,12 @@ export async function handler(event: StatusRequest) {
     
     // If status is still RUNNING, check ECS for updates
     if (taskData.status === "RUNNING") {
-      const clusterName = taskData.taskArn.split('/')[1];
+      const clusterName = taskArn.split('/')[1];
       
       try {
         const ecsResponse = await ecsClient.send(new DescribeTasksCommand({
           cluster: clusterName,
-          tasks: [taskData.taskArn]
+          tasks: [taskArn]
         }));
         
         const task = ecsResponse.tasks?.[0];
@@ -108,18 +112,17 @@ export async function handler(event: StatusRequest) {
       }
     }
     
+    // Assemble the final response matching example spec
     const response = {
-      ...taskData,
-      // Include computed duration for client logging
+      taskId: taskData.taskId,
+      status: taskData.status,
+      command: taskData.command,
+      priority: taskData.priority,
+      userId: taskData.userId,
+      createdAt: taskData.createdAt,
+      completedAt: taskData.completedAt,
       duration,
-      detailedResults,
-      isComplete: taskData.status !== "RUNNING",
-      links: {
-        self: `${Resource.TaskStatusHandler.url}?taskId=${taskId}`,
-        ...(taskData.status === "RUNNING" && {
-          poll: `${Resource.TaskStatusHandler.url}?taskId=${taskId}&wait=true`
-        })
-      }
+      detailedResults
     };
     
     return {
