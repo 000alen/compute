@@ -50,6 +50,9 @@ export async function handler(event: StatusRequest) {
       metadata: dbResponse.Item.metadata?.S ? JSON.parse(dbResponse.Item.metadata.S) : {}
     };
     
+    // Parse duration from DynamoDB (if available)
+    const duration = dbResponse.Item.duration?.N ? parseInt(dbResponse.Item.duration.N, 10) : undefined;
+    
     // If status is still RUNNING, check ECS for updates
     if (taskData.status === "RUNNING") {
       const clusterName = taskData.taskArn.split('/')[1];
@@ -105,6 +108,8 @@ export async function handler(event: StatusRequest) {
     
     const response = {
       ...taskData,
+      // Include computed duration for client logging
+      duration,
       detailedResults,
       isComplete: taskData.status !== "RUNNING",
       links: {
